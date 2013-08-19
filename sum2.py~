@@ -1,0 +1,181 @@
+from time import time
+
+class HashTable:
+    def __init__(self):
+        self.bucketSize = 200001
+        self.table = [[] for i in range(1000000)]
+    
+    def hashFunc(self, key): #make buckets of size 200001 (i.e. 0-200001 -> same bucket)
+        return 500000 + key // self.bucketSize 
+
+    #for this implementation, value = key
+    def addElement(self, key, value):
+        hashedKey = self.hashFunc(key)
+        self.table[hashedKey].append(value)
+
+    def getBucket(self, key):
+        hashedKey = self.hashFunc(key)
+        return self.table[hashedKey]
+
+    def isElementInTable(self, key, val):
+        bucket = self.getBucket(key)
+        return val in bucket
+
+    def checkNearbyBuckets(self, key, val):
+        return (self.isElementInTable(key, val)) or (self.isElementInTable(key + self.bucketSize, val))or (self.isElementInTable(key - self.bucketSize, val))
+
+class Node:
+    def __init__(self, data):
+        self.left = None
+        self.right = None
+        self.data = data
+        #self.parent = parent
+    def insert(self, data):
+        if data < self.data:
+            if self.left is None:
+                self.left = Node(data)
+            else:
+                self.left.insert(data)
+        else:
+            if self.right is None:
+                self.right = Node(data)
+            else:
+                self.right.insert(data)
+    def lookup(self, data, parent = None):
+        if data < self.data:
+            if self.left is None:
+                return None, None
+            return self.left.lookup(data, self)
+        elif data > self.data:
+            if self.right is None:
+                return None, None
+            return self.right.lookup(data, self)
+        else:
+            return self, parent
+    def maxLessThan(self, data):
+        searchNode = self.lookup(data)
+        searchNode = searchNode.left
+        while searchNode != None:
+            if searchNode.right is not None:
+                searchNode = searchNode.right
+            else:
+                return searchNode
+        return None
+    def minMoreThan(self, data):
+        searchNode = self.lookup(data)
+        searchNode = searchNode.right
+        while searchNode != None:
+            if searchNode.left is not None:
+                searchNode = searchNode.left
+            else:
+                return searchNode
+        return None
+    def checkForValInRange(self, val):
+        global ran
+        lower = val - ran
+        upper = val + ran
+        if root.data > lower and root.data < upper:
+            #split up
+            lowerNode = self.minMoreThan(lower)
+            search, p = lowerNode.lookup(val)
+            while search == None and lowerNode.data < root.data:
+                lowerNode, parent = self.lookup(lowerNode.data)
+                search, p = parent.lookup(val)
+            if search == None:
+                lowerNode = self #root
+                search, p = lowerNode.lookup(val)
+                if search == None:
+                    return False
+                return True
+        else:
+            #check right of lower and right of parent if parent < upper
+            lowerNode = self.minMoreThan(lower)
+            search, p = lowerNode.lookup(val)
+            while search == None and lowerNode.data <= upper:
+                lowerNode, parent = self.lookup(lowerNode.data)
+                search, p = parent.lookup(val)
+            if search == None:
+                return False
+            return True
+    def getMinNode(self):
+        s = self.left
+        while s != None:
+            if s.left != None:
+                s = s.left
+        return s
+    
+def checkRange(root, val, lower, upper):
+    if (root == None):
+        return False
+    
+    x = False
+    if (lower <= root.data) and (root.data <= upper):
+        x = (val == root.data)
+
+    if(lower < root.data):
+        return x or checkRange(root.left, val, lower, upper)
+
+    if(root.data < upper):
+        return x or checkRange(root.right, val, lower, upper)
+
+def getRange(root, lower, upper, s = set()):
+    if (root == None):
+        return s
+    
+    if (lower <= root.data) and (root.data <= upper):
+        s.add(root.data)
+
+    if (lower < root.data):
+        getRange(root.left, lower, upper, s)
+
+    if (root.data < upper):
+        getRange(root.right, lower, upper, s)
+ 
+file = open('week6Data.txt')
+numSet = set()
+nums = {}
+myTable = HashTable()
+root = Node(int(file.readline()))
+
+for line in file:
+    n = int(line)
+    root.insert(n)
+    numSet.add(n)
+
+ran = 200001
+pT = set(range(-10000, 10001))
+
+print("Done Processing!")
+
+totals = {t: False for t in pT}
+for x in numSet:
+    r = set()
+    getRange(root, x - ran, x + ran, r)
+    getRange(root, -x - ran, -x + ran, r)
+    #print(x,r)
+    for y in r:
+        if x + y in pT:
+            totals[x + y] = True
+
+
+
+
+##    nums[n] = True
+##    numSet.add(n)
+##
+##count = 0
+##start = time()
+##for t in range(-10000, 10001):
+##    if t % 10 == 0:
+##        print(t,time()-start)
+##        start = time()
+##        
+##    node = root.getMinNode()
+##    while node != None:
+##        #y = t - x
+##        #if myTable.checkNearbyBuckets(x, t - x):# and 2*y != t:
+##        if root.checkForValInRange(t - node.data):
+##            count += 1
+##            break
+##        node = node.minMoreThan(node.data)
+##print(count)
